@@ -26,7 +26,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """ផ្ញើសារស្វាគមន៍ និងបង្ហាញ Menu នៅពេលអ្នកប្រើប្រាស់វាយ /start"""
     user = update.effective_user
     await update.message.reply_html(
-        f"♾ សួស្តីបាទ {user.mention_html()}! សូមស្វាគមន៍\n\nតើបងមានអ្វីខ្ញុំអាចជួយអ្វីបានទេ? សូមជ្រើសរើសពី Menu ខាងក្រោម៖",
+        f"♾ សួស្តីបាទ {user.mention_html()}!♾️ សួស្ដីបាទ! សូមស្វាគមន៍ ♾️
+តើបងមានអ្វីដែលអាចអោយខ្ញុំជួយដែរ?
+សូមចុច ជម្រើសខាងក្រោម សូមអរគុណ!",
         reply_markup=main_menu_keyboard
     )
 
@@ -43,7 +45,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 async def handle_about_us(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """ឆ្លើយតបនៅពេលគេចុចប៊ូតុង 'អំពីយើង'"""
     reply_text = "☣️ ពត៌មានអំពីយើងខ្ញុំ 
-    - ADMIN : TENG SAMBATH (PROFESSOR X)
+    - ADMIN : TENG SAMBATH-PROFESSOR X
     - FB PAGE : TS MEDIA & CAMBO SHORT 
     - CONTACT : 097 588 4772 
     - TIKTOK : ADMIN TS"
