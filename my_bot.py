@@ -44,11 +44,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 async def handle_about_us(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """ឆ្លើយតបនៅពេលគេចុចប៊ូតុង 'អំពីយើង'"""
-    reply_text = "☣️ ពត៌មានអំពីយើងខ្ញុំ 
-    - ADMIN : TENG SAMBATH-PROFESSOR X
-    - FB PAGE : TS MEDIA & CAMBO SHORT 
-    - CONTACT : 097 588 4772 
-    - TIKTOK : ADMIN TS"
+    reply_text = "☣️ ពត៌មានអំពីយើងខ្ញុំ "
     await update.message.reply_text(reply_text, reply_markup=main_menu_keyboard)
 
 async def handle_unknown_messages(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
