@@ -1,2 +1,14 @@
-build:
-  pythonVersion: 3.11
+services:
+  - type: web
+    name: telegram-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python my_bot.py
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false
+      - key: RENDER_EXTERNAL_URL
+        sync: false
+    build:
+      pythonVersion: 3.11
