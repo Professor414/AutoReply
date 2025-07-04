@@ -1,85 +1,208 @@
-# my_bot.py
-
 import os
-import telegram
-from telegram import ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import logging
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
-# --- ផ្នែករៀបចំ Menu ---
-# បង្កើតប៊ូតុងសម្រាប់ Menu របស់យើង (អាចដាក់ Emoji បាន)
-button_products = KeyboardButton(text="🛍️ ផលិតផល")
-button_location = KeyboardButton(text="📍 ទីតាំង & ទំនាក់ទំនង")
-button_about_us = KeyboardButton(text="ℹ️ អំពីយើង")
+# បើកដំណើរការ Logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
-# រៀបចំប៊ូតុងជាแถว (Row)
-# នៅទីនេះយើងដាក់ ២ ប៊ូតុងក្នុងមួយแถว និង ១ ប៊ូតុងនៅแถวទីពីរ
-main_menu_layout = [
-    [button_products, button_location],
-    [button_about_us]
-]
-# បង្កើត Menu Keyboard
-main_menu_keyboard = ReplyKeyboardMarkup(main_menu_layout, resize_keyboard=True)
+# ------------------- ទិន្នន័យសម្រាប់ Bot (កែប្រែត្រង់នេះ) -------------------
+# ព័ត៌មានលម្អិតសម្រាប់ផលិតផលនីមួយៗ
+PRODUCT_A_DETAIL = """
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល A***
+- លក្ខណៈពិសេសទី១: ...
+- លក្ខណៈពិសេសទី២: ...
+- តម្លៃ: $10
+"""
+PRODUCT_B_DETAIL = """
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល B***
+- លក្ខណៈពិសេស: ...
+- តម្លៃ: $20
+"""
+PRODUCT_C_DETAIL = """
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល C***
+- លក្ខណៈពិសេស: ...
+- តម្លៃ: $30
+"""
+
+# ព័ត៌មានលម្អិតសម្រាប់ទីតាំង
+LOCATION_MAP_DETAIL = "[ចុចទីនេះដើម្បីមើល trên Google Maps](https://maps.google.com/?q=11.5564,104.9282)"
+LOCATION_ADDRESS_DETAIL = """
+*អាសយដ្ឋាន:*
+ផ្ទះលេខ ១២៣, ផ្លូវ ៤៥៦, សង្កាត់បឹងកេងកង, ខណ្ឌចំការមន, រាជធានីភ្នំពេញ
+"""
+
+# ព័ត៌មានលម្អិតសម្រាប់ទំនាក់ទំនង
+CONTACT_PHONE_DETAIL = "ទូរស័ព្ទ: `+855 12 345 678`"
+CONTACT_EMAIL_DETAIL = "អ៊ីមែល: `info@yourcompany.com`"
+CONTACT_WECHAT_DETAIL = "WeChat ID: `your_wechat_id`"
+# --------------------------------------------------------------------
+
+# --- Functions បង្កើត Keyboard ---
+def get_main_menu_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("📦 ផលិតផល (Product)", callback_data='main_product')],
+        [InlineKeyboardButton("📍 ទីតាំង (Location)", callback_data='main_location')],
+        [InlineKeyboardButton("📞 ទំនាក់ទំនង (Contact)", callback_data='main_contact')],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_product_menu_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("ផលិតផល A", callback_data='product_A')],
+        [InlineKeyboardButton("ផលិតផល B", callback_data='product_B')],
+        [InlineKeyboardButton("ផលិតផល C", callback_data='product_C')],
+        [InlineKeyboardButton("⬅️ ត្រឡប់ក្រោយ", callback_data='main_menu')],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_location_menu_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("🗺️ ផែនទី (Map)", callback_data='location_map')],
+        [InlineKeyboardButton("🏠 អាសយដ្ឋាន (Address)", callback_data='location_address')],
+        [InlineKeyboardButton("⬅️ ត្រឡប់ក្រោយ", callback_data='main_menu')],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_contact_menu_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("📱 ទូរស័ព្ទ (Phone)", callback_data='contact_phone')],
+        [InlineKeyboardButton("✉️ អ៊ីមែល (Email)", callback_data='contact_email')],
+        [InlineKeyboardButton("💬 WeChat", callback_data='contact_wechat')],
+        [InlineKeyboardButton("⬅️ ត្រឡប់ក្រោយ", callback_data='main_menu')],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_back_to_product_keyboard():
+    keyboard = [[InlineKeyboardButton("⬅️ ត្រឡប់ទៅបញ្ជីផលិតផល", callback_data='main_product')]]
+    return InlineKeyboardMarkup(keyboard)
+# --- End Keyboard Functions ---
 
 
-# --- ផ្នែក Handlers (មុខងារឆ្លើយតប) ---
-
-def start(update, context):
-    """ផ្ញើសារស្វាគមន៍ និងបង្ហាញ Menu នៅពេលអ្នកប្រើប្រាស់វាយ /start"""
-    user = update.effective_user
-    update.message.reply_html(
-        f"សួស្ដីបាទ {user.mention_html()}! ខ្ញុំបាទ តេង សម្បត្តិ (ADMIN PAGE TS MEDIA)  \n\n
-        - តើខ្ញុំអាចជួយអ្វីបានដែរ? សូមជ្រើសរើសពី Menu ខាងក្រោម៖",
-        reply_markup=main_menu_keyboard  # បង្ហាញ Menu
+# Function សម្រាប់ command /start
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text(
+        text="👋 សួស្តី! សូមជ្រើសរើសព័ត៌មានដែលអ្នកចង់បាន៖",
+        reply_markup=get_main_menu_keyboard()
     )
 
-def handle_products(update, context):
-    """ឆ្លើយតបនៅពេលគេចុចប៊ូតុង 'ផលិតផល'"""
-    reply_text = "នេះគឺជាបញ្ជីផលិតផលរបស់យើង៖\n- ផលិតផល A: តម្លៃ $10\n- ផលិតផល B: តម្លៃ $20\n- ផលិតផល C: តម្លៃ $30"
-    update.message.reply_text(reply_text, reply_markup=main_menu_keyboard)
+# Function សម្រាប់គ្រប់គ្រងការចុចប៊ូតុងទាំងអស់
+def button_handler(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    query.answer()  # ឆ្លើយតបទៅ Telegram ថាបានទទួលការចុចហើយ
 
-def handle_location(update, context):
-    """ឆ្លើយតបនៅពេលគេចុចប៊ូតុង 'ទីតាំង & ទំនាក់ទំនង'"""
-    reply_text = "☣️ ពត៌មានបន្ថែម\n\n📞 លេខទូរស័ព្ទ៖ 097 588 4772 \n\n ✉️ Email : Krootback@gmail.com \n\n "
-    update.message.reply_text(reply_text, reply_markup=main_menu_keyboard)
+    # Main Menu selections
+    if query.data == 'main_menu':
+        query.edit_message_text(
+            text="👋 សូមជ្រើសរើសព័ត៌មានដែលអ្នកចង់បាន៖",
+            reply_markup=get_main_menu_keyboard()
+        )
+    elif query.data == 'main_product':
+        query.edit_message_text(
+            text="📦 សូមជ្រើសរើសផលិតផលដើម្បីមើលព័ត៌មានលម្អិត៖",
+            reply_markup=get_product_menu_keyboard()
+        )
+    elif query.data == 'main_location':
+        query.edit_message_text(
+            text="📍 សូមជ្រើសរើសព័ត៌មានទីតាំង៖",
+            reply_markup=get_location_menu_keyboard()
+        )
+    elif query.data == 'main_contact':
+        query.edit_message_text(
+            text="📞 សូមជ្រើសរើសមធ្យោបាយទំនាក់ទំនង៖",
+            reply_markup=get_contact_menu_keyboard()
+        )
 
-def handle_about_us(update, context):
-    """ឆ្លើយតបនៅពេលគេចុចប៊ូតុង 'អំពីយើង'"""
-    reply_text = "ℹ️ យើងខ្ញុំគឺជាហាងដែលផ្តល់ជូនផលិតផលដែលមានគុណភាពខ្ពស់ និងសេវាកម្មល្អបំផុតជូនអតិថិជន។"
-    update.message.reply_text(reply_text, reply_markup=main_menu_keyboard)
+    # Product sub-menu selections
+    elif query.data == 'product_A':
+        query.edit_message_text(
+            text=PRODUCT_A_DETAIL,
+            reply_markup=get_back_to_product_keyboard(),
+            parse_mode='Markdown'
+        )
+    elif query.data == 'product_B':
+        query.edit_message_text(
+            text=PRODUCT_B_DETAIL,
+            reply_markup=get_back_to_product_keyboard(),
+            parse_mode='Markdown'
+        )
+    elif query.data == 'product_C':
+        query.edit_message_text(
+            text=PRODUCT_C_DETAIL,
+            reply_markup=get_back_to_product_keyboard(),
+            parse_mode='Markdown'
+        )
+        
+    # Location sub-menu selections
+    elif query.data == 'location_map':
+        query.edit_message_text(
+            text=LOCATION_MAP_DETAIL,
+            reply_markup=get_location_menu_keyboard(),
+            parse_mode='Markdown',
+            disable_web_page_preview=False
+        )
+    elif query.data == 'location_address':
+        query.edit_message_text(
+            text=LOCATION_ADDRESS_DETAIL,
+            reply_markup=get_location_menu_keyboard(),
+            parse_mode='Markdown'
+        )
 
-def handle_unknown_messages(update, context):
-    """ឆ្លើយតបទៅសារដែលមិនស្គាល់ (Auto-Reply ទូទៅ)"""
-    reply_text = "ขออภัยครับ ខ្ញុំមិនយល់ពីអ្វីដែលអ្នកចង់បានទេ។ សូមសាកល្បងជ្រើសរើសពី Menu ដែលមានស្រាប់។"
-    update.message.reply_text(reply_text, reply_markup=main_menu_keyboard)
+    # Contact sub-menu selections
+    elif query.data == 'contact_phone':
+        query.edit_message_text(
+            text=CONTACT_PHONE_DETAIL,
+            reply_markup=get_contact_menu_keyboard(),
+            parse_mode='Markdown'
+        )
+    elif query.data == 'contact_email':
+        query.edit_message_text(
+            text=CONTACT_EMAIL_DETAIL,
+            reply_markup=get_contact_menu_keyboard(),
+            parse_mode='Markdown'
+        )
+    elif query.data == 'contact_wechat':
+        query.edit_message_text(
+            text=CONTACT_WECHAT_DETAIL,
+            reply_markup=get_contact_menu_keyboard(),
+            parse_mode='Markdown'
+        )
 
 
-def main():
-    """ចាប់ផ្តើមដំណើរការ Bot"""
-    # យក TOKEN ពី Environment Variable ដើម្បីសុវត្ថិភាព
-    # យើងនឹងកំណត់វានៅលើ Render.com
-    TOKEN = os.getenv("TELEGRAM_TOKEN")
+def main() -> None:
+    TOKEN = os.environ.get("TELEGRAM_TOKEN")
     if not TOKEN:
-        print("!!! សូមកំណត់ TELEGRAM_TOKEN ជា Environment Variable ជាមុនសិន។")
-        return
+        raise ValueError("សូមដាក់ TELEGRAM_TOKEN នៅក្នុង Environment Variables")
 
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
+    updater = Updater(TOKEN)
+    dispatcher = updater.dispatcher
 
-    # ចុះឈ្មោះ Handlers
-    # 1. Command Handler សម្រាប់ /start
-    dp.add_handler(CommandHandler("start", start))
+    # ចុះឈ្មោះ Command Handler
+    dispatcher.add_handler(CommandHandler("start", start))
 
-    # 2. Message Handlers សម្រាប់ប៊ូតុងនីមួយៗ
-    dp.add_handler(MessageHandler(Filters.regex('^🛍️ ផលិតផល$'), handle_products))
-    dp.add_handler(MessageHandler(Filters.regex('^📍 ទីតាំង & ទំនាក់ទំនង$'), handle_location))
-    dp.add_handler(MessageHandler(Filters.regex('^ℹ️ អំពីយើង$'), handle_about_us))
+    # ចុះឈ្មោះ Callback Query Handler (สำหรับจัดการប៊ូតុង)
+    dispatcher.add_handler(CallbackQueryHandler(button_handler))
     
-    # 3. Message Handler សម្រាប់សារផ្សេងៗដែលមិនត្រូវនឹងប៊ូតុង
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_unknown_messages))
+    # សម្រាប់ Render.com
+    PORT = int(os.environ.get('PORT', '8443'))
+    APP_NAME = os.environ.get("RENDER_EXTERNAL_URL")
+    if not APP_NAME:
+        raise ValueError("RENDER_EXTERNAL_URL is not set")
 
-    print("Bot កំពុងដំណើរការ...")
-    updater.start_polling()
+    logger.info(f"Starting bot on port {PORT}")
+    updater.start_webhook(listen="0.0.0.0",
+                          port=PORT,
+                          url_path=TOKEN,
+                          webhook_url=f"{APP_NAME}/{TOKEN}")
+    
     updater.idle()
+
 
 if __name__ == '__main__':
     main()
