@@ -1,59 +1,74 @@
+# -*- coding: utf-8 -*-
+
 import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
-# បើកដំណើរការ Logging
+# កំណត់ค่า Logging เพื่อดูข้อผิดพลาด
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# ------------------- ទិន្នន័យសម្រាប់ Bot (កែប្រែត្រង់នេះ) -------------------
-# ព័ត៌មានលម្អិតសម្រាប់ម៉ឺនុយរងរបស់ Product A
+# ==============================================================================
+# ==                       កន្លែងកែប្រែទិន្នន័យ (EDIT HERE)                     ==
+# ==============================================================================
+
+# --- ព័ត៌មានលម្អិតសម្រាប់ម៉ឺនុយរងរបស់ Product A ---
 PRODUCT_A1_DETAIL = """
-***ព័ត៌មានលម្អិតអំពីផលិតផល A1***
-- នេះជាផលិតផលប្រភេទទី១ របស់ A
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល A1***
+- នេះជាផលិតផលប្រភេទទី១ របស់ A។
+- អ្នកអាចបន្ថែមรายละเอียดเพิ่มเติมនៅត្រង់នេះ។
 - តម្លៃ: $11
 """
 PRODUCT_A2_DETAIL = """
-***ព័ត៌មានលម្អិតអំពីផលិតផល A2***
-- នេះជាផលិតផលប្រភេទទី២ របស់ A
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល A2***
+- នេះជាផលិតផលប្រភេទទី២ របស់ A។
+- អ្នកអាចបន្ថែមรายละเอียดเพิ่มเติมនៅត្រង់នេះ។
 - តម្លៃ: $12
 """
 
-# ព័ត៌មានលម្អិតសម្រាប់ម៉ឺនុយរងរបស់ Product B
+# --- ព័ត៌មានលម្អិតសម្រាប់ម៉ឺនុយរងរបស់ Product B ---
 PRODUCT_B1_DETAIL = """
-***ព័ត៌មានលម្អិតអំពីផលិតផល B1***
-- នេះជាផលិតផលប្រភេទទី១ របស់ B
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល B1***
+- នេះជាផលិតផលប្រភេទទី១ របស់ B។
 - តម្លៃ: $21
 """
 PRODUCT_B2_DETAIL = """
-***ព័ត៌មានលម្អិតអំពីផលិតផល B2***
-- នេះជាផលិតផលប្រភេទទី២ របស់ B
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល B2***
+- នេះជាផលិតផលប្រភេទទី២ របស់ B។
 - តម្លៃ: $22
 """
 
-# ព័ត៌មានលម្អិតសម្រាប់ម៉ឺនុយរងរបស់ Product C
+# --- ព័ត៌មានលម្អិតសម្រាប់ម៉ឺនុយរងរបស់ Product C ---
 PRODUCT_C1_DETAIL = """
-***ព័ត៌មានលម្អិតអំពីផលិតផល C1***
-- នេះជាផលិតផលប្រភេទទី១ របស់ C
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល C1***
+- នេះជាផលិតផលប្រភេទទី១ របស់ C។
 - តម្លៃ: $31
 """
 PRODUCT_C2_DETAIL = """
-***ព័ត៌មានលម្អិតអំពីផលិតផល C2***
-- នេះជាផលិតផលប្រភេទទី២ របស់ C
+*
+**ព័ត៌មានលម្អិតអំពីផលិតផល C2***
+- នេះជាផលិតផលប្រភេទទី២ របស់ C។
 - តម្លៃ: $32
 """
 
-# ព័ត៌មានផ្សេងៗ
+# --- ព័ត៌មានទីតាំង និងទំនាក់ទំនង ---
 LOCATION_MAP_DETAIL = "[ចុចទីនេះដើម្បីមើលบน Google Maps](https://maps.google.com/?q=11.5564,104.9282)"
 LOCATION_ADDRESS_DETAIL = "*អាសយដ្ឋាន:*\nផ្ទះលេខ ១២៣, ផ្លូវ ៤៥៦, សង្កាត់បឹងកេងកង, ខណ្ឌចំការមន, រាជធានីភ្នំពេញ"
-CONTACT_PHONE_DETAIL = "ទូរស័ព្ទ: `+855 12 345 678`"
-CONTACT_EMAIL_DETAIL = "អ៊ីមែល: `info@yourcompany.com`"
-CONTACT_WECHAT_DETAIL = "WeChat ID: `your_wechat_id`"
-# --------------------------------------------------------------------
+CONTACT_PHONE_DETAIL = "ទូរស័ព្ទ: `+855 12 345 678` (ចុចដើម្បី Copy)"
+CONTACT_EMAIL_DETAIL = "អ៊ីមែល: `info@yourcompany.com` (ចុចដើម្បី Copy)"
+CONTACT_WECHAT_DETAIL = "WeChat ID: `your_wechat_id` (ចុចដើម្បី Copy)"
 
+# ==============================================================================
+# ==                  កូដរបស់ Bot (មិនចាំបាច់កែប្រែខាងក្រោមនេះ)               ==
+# ==============================================================================
 
 # --- Functions បង្កើត Keyboard ---
 def get_main_menu_keyboard():
@@ -73,7 +88,6 @@ def get_product_menu_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-# --- Keyboard សម្រាប់ Sub-Menus ---
 def get_product_A_submenu_keyboard():
     keyboard = [
         [InlineKeyboardButton("ផលិតផល A1", callback_data='product_A1')],
@@ -97,7 +111,6 @@ def get_product_C_submenu_keyboard():
         [InlineKeyboardButton("⬅️ ត្រឡប់ទៅបញ្ជីផលិតផល", callback_data='main_product')],
     ]
     return InlineKeyboardMarkup(keyboard)
-# --- End Sub-Menu Keyboards ---
 
 def get_location_menu_keyboard():
     keyboard = [
@@ -116,31 +129,29 @@ def get_contact_menu_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-# --- End Keyboard Functions ---
+# --- Functions សម្រាប់ Command និង Button ---
 
-
-# Function សម្រាប់ command /start
 def start(update: Update, context: CallbackContext) -> None:
-    # ពិនិត្យមើលថាសារមកពី Private Chat ឬ Group
-    if update.message.chat.type == 'private':
-        update.message.reply_text(
-            text="👋 សួស្តី! សូមជ្រើសរើសព័ត៌មានដែលអ្នកចង់បាន៖",
-            reply_markup=get_main_menu_keyboard()
-        )
+    user = update.effective_user
+    welcome_text = f"👋 សួស្តី {user.mention_html()}!\n\nសូមជ្រើសរើសព័ត៌មានដែលអ្នកចង់បាន៖"
+    
+    # ពិនិត្យមើលថាជាការចាប់ផ្ដើមថ្មី ឬជាการចុចប៊ូតុងត្រឡប់មកវិញ
+    if update.callback_query:
+        query = update.callback_query
+        query.edit_message_text(text=welcome_text, reply_markup=get_main_menu_keyboard(), parse_mode='HTML')
     else:
-        # បើនៅក្នុង Group ឆ្លើយតបแบบธรรมดา
-        update.message.reply_text("សួស្តី! សូម DM ខ្ញុំដើម្បីប្រើប្រាស់ម៉ឺនុយ។")
+        update.message.reply_text(text=welcome_text, reply_markup=get_main_menu_keyboard(), parse_mode='HTML')
 
 
-# Function สำหรับจัดการការចុចប៊ូតុង
 def button_handler(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
     data = query.data
 
-    # Main Menu
+    # Main Menu and Back Buttons
     if data == 'main_menu':
-        query.edit_message_text(text="👋 សូមជ្រើសរើសព័ត៌មានដែលអ្នកចង់បាន៖", reply_markup=get_main_menu_keyboard())
+        start(update, context) # ហៅ function start វិញដើម្បីแสดงម៉ឺនុយหลัก
+        return
     elif data == 'main_product':
         query.edit_message_text(text="📦 សូមជ្រើសរើសប្រភេទផលិតផល៖", reply_markup=get_product_menu_keyboard())
     elif data == 'main_location':
@@ -148,13 +159,13 @@ def button_handler(update: Update, context: CallbackContext) -> None:
     elif data == 'main_contact':
         query.edit_message_text(text="📞 សូមជ្រើសរើសមធ្យោបាយទំនាក់ទំនង៖", reply_markup=get_contact_menu_keyboard())
 
-    # Product Menu (A, B, C) -> បង្ហាញ Sub-menu
+    # Product Menu -> Sub-menu
     elif data == 'product_A':
-        query.edit_message_text(text="ท่านเลือกផលិតផល A, សូមជ្រើសរើសប្រភេទ៖", reply_markup=get_product_A_submenu_keyboard())
+        query.edit_message_text(text="អ្នកបានជ្រើសរើសផលិតផល A, សូមជ្រើសរើសប្រភេទ៖", reply_markup=get_product_A_submenu_keyboard())
     elif data == 'product_B':
-        query.edit_message_text(text="ท่านเลือกផលិតផល B, សូមជ្រើសរើសប្រភេទ៖", reply_markup=get_product_B_submenu_keyboard())
+        query.edit_message_text(text="អ្នកបានជ្រើសរើសផលិតផល B, សូមជ្រើសរើសប្រភេទ៖", reply_markup=get_product_B_submenu_keyboard())
     elif data == 'product_C':
-        query.edit_message_text(text="ท่านเลือกផលិតផល C, សូមជ្រើសរើសប្រភេទ៖", reply_markup=get_product_C_submenu_keyboard())
+        query.edit_message_text(text="អ្នកបានជ្រើសរើសផលិតផល C, សូមជ្រើសរើសប្រភេទ៖", reply_markup=get_product_C_submenu_keyboard())
 
     # Product Sub-menu Details
     elif data == 'product_A1':
@@ -186,28 +197,38 @@ def button_handler(update: Update, context: CallbackContext) -> None:
 
 
 def main() -> None:
+    """Start the bot and set it up to run on Render."""
+    
+    # យក Token ពី Environment Variable របស់ Render.com
     TOKEN = os.environ.get("TELEGRAM_TOKEN")
     if not TOKEN:
-        raise ValueError("សូមដាក់ TELEGRAM_TOKEN នៅក្នុង Environment Variables")
+        logger.error("!!! TELEGRAM_TOKEN environment variable not found!")
+        raise ValueError("សូមដាក់ TELEGRAM_TOKEN នៅក្នុង Environment Variables លើ Render.com")
 
     updater = Updater(TOKEN)
     dispatcher = updater.dispatcher
 
+    # ចុះឈ្មោះ handlers
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CallbackQueryHandler(button_handler))
     
+    # យកค่า PORT และ URL ពី Render.com
     PORT = int(os.environ.get('PORT', '8443'))
     APP_NAME = os.environ.get("RENDER_EXTERNAL_URL")
     if not APP_NAME:
-        raise ValueError("RENDER_EXTERNAL_URL is not set")
+        logger.error("!!! RENDER_EXTERNAL_URL environment variable not found!")
+        raise ValueError("RENDER_EXTERNAL_URL មិនត្រូវបានកំណត់។ វាควรจะถูกកំណត់ដោយ Render ដោយស្វ័យប្រវត្តិ។")
 
-    logger.info(f"Starting bot on port {PORT}")
+    logger.info(f"Starting webhook for bot on URL: {APP_NAME}")
+    
+    # ចាប់ផ្ដើម Bot ដោយใช้ Webhook
     updater.start_webhook(listen="0.0.0.0",
                           port=PORT,
                           url_path=TOKEN,
                           webhook_url=f"{APP_NAME}/{TOKEN}")
     
     updater.idle()
+
 
 if __name__ == '__main__':
     main()
